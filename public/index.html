@@ -1,0 +1,84 @@
+<!DOCTYPE html>  
+<html lang="en" ng-app="myApp" class="no-js"> <!--<![endif]-->  
+<head>  
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Comunicacion Arduino</title>
+</head>  
+<body>  
+  <script src="js/socket.io-client/dist/socket.io.js"></script>
+  <script src="js/angular/angular.js"></script>  
+  <script src="js/angular-socket-io/socket.js"></script>
+  
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <link rel="stylesheet" href="css/estilos.css">
+ 
+  <div class="row" ng-controller="ArduController">
+	<div class="col-md-2"></div>
+	<div class="col-md-8">
+	<div class="titulo">
+		<h2>Controlador Arduino</h2>
+	</div>
+	<hr/>
+	<div class="principal">		
+	 <form>
+	  <div class="col-xs-4">
+		<label for="temperatura">Temperatura MicroServicio</label>
+		<input type="text" class="form-control" id="temperatura" value="{{ms_temp}}" disabled>
+	  </div>
+	  <div class="col-xs-4">
+		<label for="potenciomentro">Control</label>
+		<button class="btn btn-primary" ng-click="ledOn()">On</button>
+		<button class="btn btn-danger" ng-click="ledOff()">Off</button>
+	  </div>
+	  <div class="col-xs-4">
+		<label for="potenciomentro">Respuesta MicroServicio</label>
+		<input type="text" class="form-control" id="statusLed" value="{{ms_led}}" disabled>
+	  </div>
+	</form>
+	</div>
+	</div>
+  </div>
+ 
+<script type="text/javascript">  
+    var app = angular.module('myApp', ['btford.socket-io']).
+    factory('mySocket', function (socketFactory) {
+        return socketFactory();
+    }).
+    controller('ArduController', function ($scope,mySocket,$http) {
+ 		
+		mySocket.on('pot', function(pot){
+			$scope.$apply(function(){
+				$scope.potenciometro = pot;
+			});
+		});
+		
+		mySocket.on('temp', function(temp){
+			$scope.$apply(function(){
+				$scope.temperatura = temp;
+				$http.get('http://192.168.163.56:49160/temperature?value=' + temp).
+		        then(function(response) {
+		            $scope.ms_temp = response.data;
+		        });
+			});
+		});
+	
+        $scope.ledOn = function () {
+            mySocket.emit('led:on');
+            $http.get('http://192.168.163.56:49170/led?value=Prendido').
+	        then(function(response) {
+	            $scope.ms_led = response.data;
+	        });
+        };
+ 
+        $scope.ledOff = function () {
+            mySocket.emit('led:off');
+            $http.get('http://192.168.163.56:49170/led?value=Apagado').
+	        then(function(response) {
+	            $scope.ms_led = response.data;
+	        });
+        }; 
+           
+	});
+</script>  
+</body>
